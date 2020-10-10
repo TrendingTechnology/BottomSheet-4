@@ -35,6 +35,11 @@ public class BottomSheetViewController: UIViewController {
         set { bottomSheetView.contentInsets = newValue }
     }
     
+    public var sheetInsets: UIEdgeInsets {
+        get { bottomSheetView.sheetInsets }
+        set { bottomSheetView.sheetInsets = newValue }
+    }
+    
     public init(handleStyle: BottomSheetView.HandleStyle = .none, cornerRadius: CGFloat = 16) {
         super.init(nibName: nil, bundle: nil)
         

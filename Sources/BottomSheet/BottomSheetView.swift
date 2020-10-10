@@ -95,8 +95,25 @@ public final class BottomSheetView: UIView {
         }
     }
     
+    public var sheetInsets: UIEdgeInsets = .zero {
+        didSet {
+            updateContentConstraints()
+            setNeedsDisplay()
+            setNeedsUpdateConstraints()
+        }
+    }
+    
+    private var totalInsets: UIEdgeInsets {
+        UIEdgeInsets(
+            top: contentInsets.top,
+            left: contentInsets.left + sheetInsets.left,
+            bottom: contentInsets.bottom + sheetInsets.bottom,
+            right: contentInsets.right + sheetInsets.right
+        )
+    }
+    
     private var bottomInset: CGFloat {
-        safeAreaInsets.bottom + contentInsets.bottom
+        sheetInsets.bottom > 0 ? -totalInsets.bottom : -(safeAreaInsets.bottom + contentInsets.bottom)
     }
 
     public init(sheetStyle: SheetSizingStyle = .toSafeAreaTop, handleStyle: HandleStyle = .none) {
@@ -151,9 +168,11 @@ public final class BottomSheetView: UIView {
         let outsideHandleInsets = UIEdgeInsets(top: topInset, left: 0, bottom: 0, right: 0)
         let rect = handleStyle == .outside ? rect.inset(by: outsideHandleInsets) : rect
         
+        let corners: UIRectCorner = sheetInsets.bottom > 0 ? .allCorners : [.topLeft, .topRight]
+        
         let path = UIBezierPath(
-            roundedRect: rect,
-            byRoundingCorners: [.topLeft, .topRight],
+            roundedRect: rect.inset(by: sheetInsets),
+            byRoundingCorners: corners,
             cornerRadii: CGSize(width: cornerRadius, height: cornerRadius)
         )
         
@@ -185,8 +204,8 @@ public final class BottomSheetView: UIView {
     private func updateContentConstraints() {
         contentViewTopAnchor.constant = contentInsets.top
         contentViewTopToHandleAnchor.constant = contentInsets.top + handleBottomInset
-        contentViewLeadingAnchor.constant = contentInsets.left
-        contentViewTrailingAnchor.constant = -contentInsets.right
+        contentViewLeadingAnchor.constant = totalInsets.left
+        contentViewTrailingAnchor.constant = -totalInsets.right
         contentViewBottomAnchor.constant = -bottomInset
     }
     
@@ -194,10 +213,18 @@ public final class BottomSheetView: UIView {
         contentView.translatesAutoresizingMaskIntoConstraints = false
         
         contentViewTopAnchor = contentView.topAnchor.constraint(equalTo: topAnchor, constant: contentInsets.top)
-        contentViewTopToHandleAnchor = contentView.topAnchor.constraint(equalTo: dragHandle.bottomAnchor, constant: contentInsets.top + handleBottomInset)
-        contentViewLeadingAnchor = contentView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: contentInsets.left)
-        contentViewTrailingAnchor = contentView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -contentInsets.right)
-        contentViewBottomAnchor = contentView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -bottomInset)
+        contentViewTopToHandleAnchor = contentView.topAnchor.constraint(
+            equalTo: dragHandle.bottomAnchor, constant: contentInsets.top + handleBottomInset
+        )
+        contentViewLeadingAnchor = contentView.leadingAnchor.constraint(
+            equalTo: leadingAnchor, constant: totalInsets.left
+        )
+        contentViewTrailingAnchor = contentView.trailingAnchor.constraint(
+            equalTo: trailingAnchor, constant: -totalInsets.right
+        )
+        contentViewBottomAnchor = contentView.bottomAnchor.constraint(
+            equalTo: bottomAnchor, constant: -bottomInset
+        )
 
         NSLayoutConstraint.activate([
             contentViewLeadingAnchor,
